@@ -4,25 +4,44 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+    """
+    Load messages and categories data from csv into dataframes and merge the 2 dataframes.
+    Return this merged dataframe.
+    INPUT:
+    messages_filepath - path of the file containing the messages
+    categories_filepath - path of the file containing the categories
+    
+    OUTPUT:
+    df - merged dataframe
+    """
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     df = pd.merge(messages,categories,on='id')
-    #print(df.head())
+
     return df
 
 def clean_data(df):
+    """
+    Split the categories column into multiple columns, 1 for each category (separated by ;)
+    Remove duplicates and return this cleaned dataframe.
+    INPUT:
+    df - merged dataframe of messages and categories
+    
+    OUTPUT:
+    df - merged dataframe
+    """
     categories = df.categories.str.split(';',expand=True)
+
     # select the first row of the categories dataframe
     row = categories.iloc[0]
     
     # use this row to extract a list of new column names for categories.
     category_colnames = row.str[:-2]
-    #print(category_colnames)
-   
+  
     # rename the columns of `categories`
     categories.columns = category_colnames
     
-    ### 4. Convert category values to just numbers 0 or 1.
+    # Convert category values to just numbers 0 or 1.
     for column in categories:
         # set each value to be the last character of the string
         categories[column] = categories[column].str.slice(-1)
@@ -30,26 +49,28 @@ def clean_data(df):
         # convert column from string to numeric
         categories[column] = categories[column].astype('int')
     
-    ### 5. Replace `categories` column in `df` with new category columns.
+    # Replace `categories` column in `df` with new category columns.
     # drop the original categories column from `df`
     df = df.drop('categories',axis=1,errors='ignore')
     
     # concatenate the original dataframe with the new `categories` dataframe
     df = pd.concat([df,categories],axis=1)
     
-    ### 6. Remove duplicates.
-    # check number of duplicates
-    #print(df.duplicated( keep='first').sum())
-
-    # drop duplicates
+    # Remove duplicates.
     df = df.drop_duplicates()   
-    
-    # check number of duplicates
-    #print(df.duplicated( keep='first').sum())
     
     return df
 
 def save_data(df, database_filename):
+    
+    """
+    Save the data to database.
+    
+    INPUT:
+    df - cleaned dataframe to be stored in database
+    database_filename - path of the database file
+    
+    """
     url ='sqlite:///'+database_filename
     engine = create_engine(url)
     engine.execute("DROP TABLE IF EXISTS DisasterMessages")
