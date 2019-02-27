@@ -1,5 +1,5 @@
-import sys
 # import libraries
+import sys
 import pandas as pd
 import numpy as np
 from nltk.tokenize import word_tokenize
@@ -12,11 +12,23 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier
 import pickle
-
 import nltk
 nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger'])
 
 def load_data(database_filepath):
+    """
+    Load the data from database. 
+    Define feature and target variables X and Y
+    X are the messages and Y are all the category columns
+    INPUT:
+    database_filepath - path of the database file
+    
+    OUTPUT:
+    X - feature variable
+    Y - target variable
+    category_names - names of categories
+    """
+    
     # load data from database
     url ='sqlite:///'+database_filepath
     engine = create_engine(url)
@@ -28,15 +40,16 @@ def load_data(database_filepath):
     
 
 def tokenize(text):
-    ''' 
+    """ 
+    Split the message and clean the tokens
+        1. Tokenize text using word_tokenize
+        2. Lemmetize the tokens
+        3. Normalize the tokens
+        4. Strip any white spaces
+    
     INPUT - Disaster Message
     OUTPUT - list of processed tokens
-        
-    1. Tokenize text using word_tokenize
-    2. Lemmetize the tokens
-    3. Normalize the tokens
-    4. Strip any white spaces
-    '''
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -49,19 +62,39 @@ def tokenize(text):
 
 
 def build_model():
+    """ 
+    Build a machine learning pipeline
+        
+    INPUT - None
+    OUTPUT - Pipeline of optimized model
+    """
     # Pipeline of CountVextorizer, TfdifTransformer and MultiOutputClassifier
     pipeline = Pipeline([
                 ('vect', CountVectorizer(tokenizer=tokenize)),
                 ('tfidf', TfidfTransformer()),
                 ('clf', MultiOutputClassifier(RandomForestClassifier()))
     ])
-    return pipeline
+    
+    parameters = {'clf__estimator__n_estimators': [50, 30],
+              'clf__estimator__min_samples_split': [3, 2] 
+    }
+    
+    cv = GridSearchCV(pipeline, param_grid= parameters, verbose=2, n_jobs=4)
+    return cv
 
 def evaluate_model(model, X_test, y_test, category_names):
-    #Split data into train and test sets
-    #X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=42)
-    #print(X_train.shape,y_train.shape)
-
+    """ 
+    Evaluate the model against the test dataset.
+    Report the f1 score, precision and recall for each output category of the dataset. 
+        
+    INPUT - 
+    model - Pipeline of optimized model
+    X_test - test feature dataset
+    y_test - test target dataset
+    category_names - names of vategories
+    
+    OUTPUT - None
+    """
     # Predict for test set
     y_pred = model.predict(X_test)
     
@@ -72,6 +105,15 @@ def evaluate_model(model, X_test, y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """ 
+    Save the model as a pickle file.
+        
+    INPUT - 
+    model - Pipeline of optimized model
+    model_filepath - path to save the file
+    
+    OUTPUT - None
+    """
     pickle.dump(model, open(model_filepath, 'wb'))
 
 
