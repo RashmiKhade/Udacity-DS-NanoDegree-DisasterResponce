@@ -37,3 +37,5 @@ run.py - Flask Web App for data visualizations and predicting categories for a D
 
 3. Go to http://0.0.0.0:3001/
 
+![Image of Header](https://github.com/RashmiKhade/Udacity-DS-NanoDegree-DisasterResponce/blob/master/PredictCategory.PNG)
+![Image of Plots](https://github.com/RashmiKhade/Udacity-DS-NanoDegree-DisasterResponce/blob/master/Plots.PNG)
